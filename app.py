@@ -320,7 +320,7 @@ st.plotly_chart(
     use_container_width=True
 )
 
-    st.dataframe(
+st.dataframe(
         metricas_forecast,
         use_container_width=True,
         hide_index=True
