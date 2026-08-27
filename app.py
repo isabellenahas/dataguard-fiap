@@ -421,25 +421,25 @@ elif pagina == "OLA Risk":
         use_container_width=True,
         hide_index=True
     )
-
     st.subheader(
-    "Comparação inicial dos modelos"
-)
+        "Comparação inicial dos modelos"
+    )
 
     st.dataframe(
         metricas_ola,
         use_container_width=True,
         hide_index=True
     )
-st.caption(
-    "A comparação acima representa a etapa inicial de seleção dos modelos. "
-    "Após a escolha da Logistic Regression com Produto e Categoria, "
-    "o threshold operacional foi ajustado para 92,6. "
-    "Nesse ponto de corte, o modelo alcançou Precision de 20,8% "
-    "e Recall de 22,0%, priorizando uma quantidade menor de registros "
-    "para investigação operacional."
-)
 
+    st.caption(
+        "A comparação acima representa a etapa inicial de seleção dos modelos. "
+        "Após a escolha da Logistic Regression com Produto e Categoria, "
+        "o threshold operacional foi ajustado para 92,6. "
+        "Nesse ponto de corte, o modelo alcançou Precision de 20,8% "
+        "e Recall de 22,0%, priorizando uma quantidade menor de registros "
+        "para investigação operacional."
+    )
+ 
 # =========================
 # PATTERNS
 # =========================
