@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -38,7 +37,6 @@ h1 {
 
 </style>
 """, unsafe_allow_html=True)
-
 
 # =========================
 # DADOS
@@ -88,7 +86,6 @@ def carregar_dados():
         metricas_ola
     )
 
-
 (
     historico,
     previsao,
@@ -98,7 +95,6 @@ def carregar_dados():
     metricas_forecast,
     metricas_ola
 ) = carregar_dados()
-
 
 # =========================
 # SIDEBAR
@@ -125,7 +121,6 @@ st.sidebar.divider()
 st.sidebar.caption(
     "Enterprise Challenge FIAP + Locaweb 2026"
 )
-
 
 # =========================
 # OVERVIEW
@@ -166,10 +161,10 @@ if pagina == "Overview":
     )
 
     col3.metric(
-    "Registros em faixa crítica",
-    f"{criticos:,}",
-    help="Registros históricos classificados acima do threshold crítico do OLA Risk Score."
-)
+        "Registros em faixa crítica",
+        f"{criticos:,}",
+        help="Registros históricos classificados acima do threshold crítico do OLA Risk Score."
+    )
 
     col4.metric(
         "Registros analisados",
@@ -187,7 +182,9 @@ if pagina == "Overview":
     hist["Tipo"] = "Real"
 
     hist = hist.rename(
-        columns={"Volume_Total": "Incidentes"}
+        columns={
+            "Volume_Total": "Incidentes"
+        }
     )
 
     prev = previsao.copy()
@@ -213,6 +210,12 @@ if pagina == "Overview":
         markers=True
     )
 
+    fig.update_layout(
+        xaxis_title="Data",
+        yaxis_title="Incidentes",
+        hovermode="x unified"
+    )
+
     st.plotly_chart(
         fig,
         use_container_width=True
@@ -223,7 +226,6 @@ if pagina == "Overview":
         "a partir de setembro de 2025. "
         "A modelagem prioriza o comportamento operacional recente."
     )
-
 
 # =========================
 # PREDICT
@@ -263,75 +265,74 @@ elif pagina == "Predict":
     )
 
     st.subheader(
-        "Projeção da próxima semana"
+        "Histórico recente e projeção D+7"
+    )
+
+    hist_predict = historico.tail(14)[
+        ["Data", "Volume_Total"]
+    ].copy()
+
+    hist_predict["Tipo"] = "Histórico"
+
+    hist_predict = hist_predict.rename(
+        columns={
+            "Volume_Total": "Incidentes"
+        }
+    )
+
+    prev_predict = previsao.copy()
+
+    prev_predict["Tipo"] = "Previsão"
+
+    prev_predict = prev_predict.rename(
+        columns={
+            "Previsao_Incidentes": "Incidentes"
+        }
+    )
+
+    predict_plot = pd.concat(
+        [
+            hist_predict,
+            prev_predict
+        ],
+        ignore_index=True
+    )
+
+    fig = px.line(
+        predict_plot,
+        x="Data",
+        y="Incidentes",
+        color="Tipo",
+        markers=True
+    )
+
+    fig.update_layout(
+        xaxis_title="Data",
+        yaxis_title="Incidentes",
+        hovermode="x unified"
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
     )
 
     st.subheader(
         "Comparação de modelos"
     )
-    
-hist_predict = historico.tail(14)[
-    ["Data", "Volume_Total"]
-].copy()
 
-hist_predict["Tipo"] = "Histórico"
-
-hist_predict = hist_predict.rename(
-    columns={
-        "Volume_Total": "Incidentes"
-    }
-)
-
-prev_predict = previsao.copy()
-
-prev_predict["Tipo"] = "Previsão"
-
-prev_predict = prev_predict.rename(
-    columns={
-        "Previsao_Incidentes": "Incidentes"
-    }
-)
-
-predict_plot = pd.concat(
-    [
-        hist_predict,
-        prev_predict
-    ],
-    ignore_index=True
-)
-
-fig = px.line(
-    predict_plot,
-    x="Data",
-    y="Incidentes",
-    color="Tipo",
-    markers=True,
-    title="Histórico recente e projeção D+7"
-)
-
-fig.update_layout(
-    xaxis_title="Data",
-    yaxis_title="Incidentes",
-    hovermode="x unified"
-)
-
-st.plotly_chart(
-    fig,
-    use_container_width=True
-)
-
-st.dataframe(
+    st.dataframe(
         metricas_forecast,
         use_container_width=True,
         hide_index=True
     )
 
     st.caption(
-        "A Média Móvel de 7 dias foi mantida porque "
-        "superou Ridge, Random Forest, Prophet e baseline D-7 "
-        "no MAE do período de validação."
+        "A Média Móvel de 7 dias foi mantida porque apresentou "
+        "o menor MAE entre as abordagens avaliadas no período de validação. "
+        "Ridge Regression, Random Forest, Prophet e os baselines D-1 e D-7 "
+        "foram comparados antes da seleção."
     )
-
 
 # =========================
 # OLA RISK
@@ -422,6 +423,7 @@ elif pagina == "OLA Risk":
         use_container_width=True,
         hide_index=True
     )
+
     st.subheader(
         "Comparação inicial dos modelos"
     )
@@ -440,7 +442,7 @@ elif pagina == "OLA Risk":
         "e Recall de 22,0%, priorizando uma quantidade menor de registros "
         "para investigação operacional."
     )
- 
+
 # =========================
 # PATTERNS
 # =========================
