@@ -319,6 +319,7 @@ st.plotly_chart(
     fig,
     use_container_width=True
 )
+
     st.dataframe(
         metricas_forecast,
         use_container_width=True,
