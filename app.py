@@ -166,10 +166,10 @@ if pagina == "Overview":
     )
 
     col3.metric(
-        "Alertas OLA críticos",
-        f"{criticos:,}",
-        help="Incidentes acima do threshold de risco validado."
-    )
+    "Registros em faixa crítica",
+    f"{criticos:,}",
+    help="Registros históricos classificados acima do threshold crítico do OLA Risk Score."
+)
 
     col4.metric(
         "Registros analisados",
@@ -266,22 +266,59 @@ elif pagina == "Predict":
         "Projeção da próxima semana"
     )
 
-    fig = px.line(
-        previsao,
-        x="Data",
-        y="Previsao_Incidentes",
-        markers=True
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
     st.subheader(
         "Comparação de modelos"
     )
+    
+hist_predict = historico.tail(14)[
+    ["Data", "Volume_Total"]
+].copy()
 
+hist_predict["Tipo"] = "Histórico"
+
+hist_predict = hist_predict.rename(
+    columns={
+        "Volume_Total": "Incidentes"
+    }
+)
+
+prev_predict = previsao.copy()
+
+prev_predict["Tipo"] = "Previsão"
+
+prev_predict = prev_predict.rename(
+    columns={
+        "Previsao_Incidentes": "Incidentes"
+    }
+)
+
+predict_plot = pd.concat(
+    [
+        hist_predict,
+        prev_predict
+    ],
+    ignore_index=True
+)
+
+fig = px.line(
+    predict_plot,
+    x="Data",
+    y="Incidentes",
+    color="Tipo",
+    markers=True,
+    title="Histórico recente e projeção D+7"
+)
+
+fig.update_layout(
+    xaxis_title="Data",
+    yaxis_title="Incidentes",
+    hovermode="x unified"
+)
+
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
     st.dataframe(
         metricas_forecast,
         use_container_width=True,
@@ -386,15 +423,22 @@ elif pagina == "OLA Risk":
     )
 
     st.subheader(
-        "Modelos avaliados"
-    )
+    "Comparação inicial dos modelos"
+)
 
     st.dataframe(
         metricas_ola,
         use_container_width=True,
         hide_index=True
     )
-
+st.caption(
+    "A comparação acima representa a etapa inicial de seleção dos modelos. "
+    "Após a escolha da Logistic Regression com Produto e Categoria, "
+    "o threshold operacional foi ajustado para 92,6. "
+    "Nesse ponto de corte, o modelo alcançou Precision de 20,8% "
+    "e Recall de 22,0%, priorizando uma quantidade menor de registros "
+    "para investigação operacional."
+)
 
 # =========================
 # PATTERNS
