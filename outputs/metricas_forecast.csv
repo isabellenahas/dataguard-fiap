@@ -1,0 +1,7 @@
+Modelo,MAE,RMSE,MAPE_%
+Média móvel 7d,131.69,166.98,14.18
+Naive D-1,131.81,152.46,14.23
+Random Forest,140.39,183.74,14.05
+Ridge Regression,148.53,194.33,15.02
+Naive D-7,187.48,234.79,19.92
+Prophet,195.49,248.56,19.61
