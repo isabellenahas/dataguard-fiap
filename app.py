@@ -1,9 +1,11 @@
 from html import escape
+import textwrap
 
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+import streamlit.components.v1 as components
 
 # ================================================================
 # DATAGUARD · SPRINT 4 FINAL UI
@@ -107,6 +109,7 @@ st.markdown(
         margin: 0 0 22px 8px;
         font-size: 11.5px;
         color: var(--dg-faint);
+        white-space: nowrap;
     }
     .dg-side-foot {
         margin: 26px 8px 0;
@@ -155,7 +158,8 @@ st.markdown(
         opacity: 1;
         background: var(--dg-accent);
     }
-    [data-testid="stSidebar"] div[role="radiogroup"] label > div:first-child {
+    [data-testid="stSidebar"] div[role="radiogroup"] label > div:first-child,
+    [data-testid="stSidebar"] label[data-baseweb="radio"] > div:first-child {
         display: none !important;
     }
     [data-testid="stSidebar"] div[role="radiogroup"] p {
@@ -539,8 +543,17 @@ def fmt_num(value, dec=2):
     return f"{float(value):,.{dec}f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def _html_fragment(value):
+    """Compacta HTML antes de entregar ao Markdown do Streamlit."""
+    return " ".join(textwrap.dedent(str(value)).strip().splitlines())
+
+
+def render_html(value):
+    st.markdown(_html_fragment(value), unsafe_allow_html=True)
+
+
 def page_header(title, subtitle, chip_html):
-    st.markdown(
+    render_html(
         f"""
         <div class="dg-page-head">
           <div>
@@ -549,14 +562,13 @@ def page_header(title, subtitle, chip_html):
           </div>
           <div class="dg-window-chip">{chip_html}</div>
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
 def section_header(title, subtitle=None):
     sub = f'<p class="dg-section-sub">{escape(subtitle)}</p>' if subtitle else ""
-    st.markdown(
+    render_html(
         f"""
         <div class="dg-section-head">
           <div>
@@ -564,8 +576,7 @@ def section_header(title, subtitle=None):
             {sub}
           </div>
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
@@ -573,47 +584,55 @@ def note(text, bold=None, warn=False, top=True):
     cls = "dg-note warn" if warn else "dg-note"
     style = "" if top else ' style="margin-top:0"'
     prefix = f"<b>{escape(bold)}</b> " if bold else ""
-    st.markdown(f'<div class="{cls}"{style}><span>{prefix}{text}</span></div>', unsafe_allow_html=True)
+    render_html(f'<div class="{cls}"{style}><span>{prefix}{text}</span></div>')
 
 
 def kpi_grid(cards):
-    html = ['<div class="dg-kpi-grid">']
+    parts = ['<div class="dg-kpi-grid">']
     for c in cards:
         classes = ["dg-kpi-card"]
-        if c.get("hero"): classes.append("hero")
-        if c.get("context"): classes.append("context")
-        if c.get("small"): classes.append("small")
-        label = c["label"]
+        if c.get("hero"):
+            classes.append("hero")
+        if c.get("context"):
+            classes.append("context")
+        if c.get("small"):
+            classes.append("small")
+
+        label = str(c["label"])
         if c.get("risk_dot"):
             label = '<span class="dg-risk-dot"></span>' + label
         if c.get("tag"):
-            label = f'<span class="dg-prio-tag">{escape(c["tag"])}</span> ' + label
-        unit = f'<span class="dg-kpi-unit">{escape(c["unit"])}</span>' if c.get("unit") else ""
-        html.append(
-            f"""
-            <article class="{' '.join(classes)}">
-              <div>
-                <div class="dg-kpi-label">{label}</div>
-                <div class="dg-kpi-value">{c['value']}{unit}</div>
-              </div>
-              <div class="dg-kpi-foot">{c.get('foot','')}</div>
-            </article>
-            """
+            label = f'<span class="dg-prio-tag">{escape(str(c["tag"]))}</span> ' + label
+
+        unit = (
+            f'<span class="dg-kpi-unit">{escape(str(c["unit"]))}</span>'
+            if c.get("unit")
+            else ""
         )
-    html.append("</div>")
-    st.markdown("".join(html), unsafe_allow_html=True)
+        foot = escape(str(c.get("foot", "")))
+
+        parts.append(
+            f'<article class="{" ".join(classes)}">'
+            f'<div>'
+            f'<div class="dg-kpi-label">{label}</div>'
+            f'<div class="dg-kpi-value">{c["value"]}{unit}</div>'
+            f'</div>'
+            f'<div class="dg-kpi-foot">{foot}</div>'
+            f'</article>'
+        )
+    parts.append("</div>")
+    render_html("".join(parts))
 
 
 def chart_header(title, subtitle=None):
     sub = f'<p class="dg-section-sub">{escape(subtitle)}</p>' if subtitle else ""
-    st.markdown(
+    render_html(
         f"""
         <div class="dg-chart-label dg-chart-shell">
           <h2 class="dg-section-title">{escape(title)}</h2>
           {sub}
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
@@ -747,30 +766,31 @@ def groups_table(df):
 
 def kpi_target_card(label, value, faixa, atingimento):
     status = "watch" if int(atingimento) < 100 else "ok"
-    return f"""
-    <article class="dg-kpi-card">
-      <div>
-        <div class="dg-kpi-label">{escape(label)}</div>
-        <div class="dg-kpi-value">{fmt_int(value)}</div>
-      </div>
-      <div class="dg-target-row">
-        <span class="dg-target-chip">Faixa oficial <b>{escape(str(faixa))}</b></span>
-        <span class="dg-status {status}">{int(atingimento)}% de atingimento</span>
-      </div>
-    </article>
-    """
+    return (
+        '<article class="dg-kpi-card">'
+        '<div>'
+        f'<div class="dg-kpi-label">{escape(str(label))}</div>'
+        f'<div class="dg-kpi-value">{fmt_int(value)}</div>'
+        '</div>'
+        '<div class="dg-target-row">'
+        f'<span class="dg-target-chip">Faixa oficial <b>{escape(str(faixa))}</b></span>'
+        f'<span class="dg-status {status}">{int(atingimento)}% de atingimento</span>'
+        '</div>'
+        '</article>'
+    )
+
 
 # -----------------------------
 # Sidebar
 # -----------------------------
 st.sidebar.markdown(
-    """
+    _html_fragment("""
     <div class="dg-brand">
       <span class="dg-brand-mark"></span>
       <span class="dg-brand-name">DATAGUARD</span>
     </div>
     <p class="dg-brand-sub">AIOps Predictive Operations</p>
-    """,
+    """),
     unsafe_allow_html=True,
 )
 
@@ -780,13 +800,43 @@ pagina = st.sidebar.radio(
     label_visibility="collapsed",
 )
 
+# O Streamlit preserva a posição de rolagem entre reruns.
+# Ao trocar de página, o container principal volta ao topo.
+_previous_page = st.session_state.get("_dg_previous_page")
+if _previous_page is None:
+    st.session_state["_dg_previous_page"] = pagina
+elif _previous_page != pagina:
+    st.session_state["_dg_previous_page"] = pagina
+    components.html(
+        """
+        <script>
+        (function () {
+            const doc = window.parent.document;
+            const targets = [
+                doc.querySelector('section.main'),
+                doc.querySelector('[data-testid="stAppViewContainer"]'),
+                doc.scrollingElement
+            ];
+            targets.forEach((el) => {
+                if (el) {
+                    try { el.scrollTop = 0; } catch (e) {}
+                }
+            });
+            try { window.parent.scrollTo(0, 0); } catch (e) {}
+        })();
+        </script>
+        """,
+        height=0,
+        width=0,
+    )
+
 st.sidebar.markdown(
-    """
+    _html_fragment("""
     <div class="dg-side-foot">
       Enterprise Challenge<br>
       FIAP + Locaweb 2026
     </div>
-    """,
+    """),
     unsafe_allow_html=True,
 )
 
@@ -1066,16 +1116,14 @@ elif pagina == "KPI & Action":
     for _, rec in recomendacoes.sort_values("Prioridade").iterrows():
         evid = str(rec["Evidência"]).replace("3,047", "3.047")
         rec_html.append(
-            f"""
-            <div class="dg-rec">
-              <span class="dg-rec-rank">{int(rec['Prioridade'])}</span>
-              <div>
-                <h3 class="dg-rec-title">{escape(str(rec['Título']))}</h3>
-                <p class="dg-rec-evidence">{escape(evid)}</p>
-                <p class="dg-rec-action"><span>Ação</span>{escape(str(rec['Ação']))}</p>
-              </div>
-            </div>
-            """
+            '<div class="dg-rec">'
+            f'<span class="dg-rec-rank">{int(rec["Prioridade"])}</span>'
+            '<div>'
+            f'<h3 class="dg-rec-title">{escape(str(rec["Título"]))}</h3>'
+            f'<p class="dg-rec-evidence">{escape(evid)}</p>'
+            f'<p class="dg-rec-action"><span>Ação</span>{escape(str(rec["Ação"]))}</p>'
+            '</div>'
+            '</div>'
         )
     rec_html.append("</div>")
     st.markdown("".join(rec_html), unsafe_allow_html=True)
