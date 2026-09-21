@@ -1,0 +1,75 @@
+from pathlib import Path
+import argparse
+import pandas as pd
+
+def attainment_ola(priority, n):
+    if priority == "2 - Alta":
+        if n < 31: return 150, "< 31"
+        if n <= 35: return 125, "31 a 35"
+        if n <= 39: return 100, "36 a 39"
+        if n <= 45: return 75, "40 a 45"
+        if n <= 53: return 50, "46 a 53"
+        return 0, "> 53"
+    if n < 201: return 150, "< 201"
+    if n <= 230: return 125, "201 a 230"
+    if n <= 263: return 100, "231 a 263"
+    if n <= 290: return 75, "264 a 290"
+    if n <= 320: return 50, "291 a 320"
+    return 0, "> 320"
+
+def attainment_volume(priority, n):
+    if priority == "2 - Alta":
+        if n < 4585: return 150, "< 4585"
+        if n <= 5388: return 125, "4585 a 5388"
+        if n <= 6168: return 100, "5389 a 6168"
+        if n <= 6252: return 75, "6169 a 6252"
+        if n <= 6336: return 50, "6253 a 6336"
+        return 0, "> 6336"
+    if n < 19489: return 150, "< 19489"
+    if n <= 22116: return 125, "19489 a 22116"
+    if n <= 22524: return 100, "22117 a 22524"
+    if n <= 23892: return 75, "22525 a 23892"
+    if n <= 24276: return 50, "23893 a 24276"
+    return 0, "> 24276"
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--dataset", required=True, help="Caminho para LW-DATASET.xlsx")
+parser.add_argument("--outputs", default="outputs", help="Diretório de outputs")
+args = parser.parse_args()
+
+out = Path(args.outputs)
+out.mkdir(parents=True, exist_ok=True)
+
+raw = pd.read_excel(args.dataset, sheet_name="Dataset Geral")
+raw["Aberto"] = pd.to_datetime(raw["Aberto"], errors="coerce")
+raw_2025 = raw[raw["Aberto"].dt.year == 2025].copy()
+
+rows = []
+for priority, label in [("2 - Alta", "P2"), ("3 - Média", "P3")]:
+    sub = raw_2025[raw_2025["Prioridade"] == priority]
+    eligible = sub["Entrou para KPI?"].astype(str).str.upper().eq("SIM")
+    violated = sub["KPI Violado?"].astype(str).str.upper().eq("SIM")
+    n_volume = int(eligible.sum())
+    n_viol = int(violated.sum())
+    att_v, faixa_v = attainment_volume(priority, n_volume)
+    att_o, faixa_o = attainment_ola(priority, n_viol)
+    rows.extend([
+        {"Indicador":"Volume de incidentes no KPI","Prioridade":label,
+         "Valor_2025":n_volume,"Faixa_oficial":faixa_v,"Atingimento_%":att_v},
+        {"Indicador":"OLA quebrado","Prioridade":label,
+         "Valor_2025":n_viol,"Faixa_oficial":faixa_o,"Atingimento_%":att_o},
+    ])
+
+pd.DataFrame(rows).to_csv(out / "kpi_2025.csv", index=False, encoding="utf-8-sig")
+
+hist = pd.read_csv(out / "historico_diario.csv", parse_dates=["Data"])
+last7 = hist.tail(7)
+p2_daily = float(last7["Volume_P2"].mean())
+p3_daily = float(last7["Volume_P3"].mean())
+dates = pd.date_range(hist["Data"].max() + pd.Timedelta(days=1), periods=7)
+
+pd.DataFrame({
+    "Data": dates,
+    "Previsao_P2": [p2_daily] * 7,
+    "Previsao_P3": [p3_daily] * 7,
+}).to_csv(out / "previsao_prioridades_d7.csv", index=False, encoding="utf-8-sig")
