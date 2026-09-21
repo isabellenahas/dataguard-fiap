@@ -1,0 +1,4 @@
+﻿Prioridade,Título,Evidência,Ação
+1,Priorizar prevenção de quebra de OLA em P2,"P2 registrou 42 violações em 2025, faixa de 75% de atingimento.",Usar o filtro P2 no OLA Risk e investigar primeiro os registros CRÍTICO/ALTO pelo score de priorização.
+2,Usar a previsão P2/P3 no planejamento de curto prazo,"D+7 projeta aproximadamente 254 P2 e 3,047 P3 no mesmo método de média móvel de 7 dias.","Utilizar o mix previsto por prioridade como insumo de capacidade e acompanhamento operacional, sem inferir headcount automaticamente."
+3,Investigar recorrência antes de inferir sobrecarga,"Team14 concentra 87,47% do volume recente e IC00014 é o item mais recorrente.","Investigar causas e recorrência nesses agrupamentos; concentração de volume, isoladamente, não comprova sobrecarga da equipe."
